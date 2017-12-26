@@ -4,38 +4,29 @@ var N = require('os').cpus().length;
 var WebSocketServer = require('ws').Server;
 var wss = null;
 
-var AsyncLock = require('async-lock');
-var lock = new AsyncLock();
+//var AsyncLock = require('async-lock');
+//var lock = new AsyncLock();
 
 var port = Port + (process.pid % N); //Math.floor(Port + N * Math.random());
-var retry = true;
-//while(retry) {
-//lock.acquire('listento', function(cb) {
-//	console.log('lock by ' + process.pid);
-	for(var i=0; i < N; i++) {
-	    try {
-		wss = new WebSocketServer({'port': port});
-		break;
-	    }
-	    catch(e)
-	    {
-		port = Port + ((port+1) % N);
-		console.log('try +1')
-	    }
-	}
-//	retry = false;
-//}, function(err,ret) {
-//	retry = true;
-//});
-//}
+for(var i=0; i < N; i++) {
+    try {
+	wss = new WebSocketServer({'port': port});
+	break;
+    }
+    catch(e)
+    {
+	port = Port + ((port+1) % N);
+	console.log('[signal]listen retry +1')
+    }
+}
 
 wss.notifyCandidate = function notifyCandidate (ws, msg) {
 	wss.clients.forEach(function each(client) {
 		if(client == ws) {
-			console.log('skip self');
+			console.log('[signal]skip self');
 		}
 		else {
-			console.log('notify candidate');
+			console.log('[signal]notify candidate');
 			client.send(msg);
 		}
 	});
@@ -44,10 +35,10 @@ wss.notifyCandidate = function notifyCandidate (ws, msg) {
 wss.notifyOffer = function notifyOffer(ws, msg) {
 	wss.clients.forEach(function each(client) {
 		if(client == ws) {
-			console.log('skip self');
+			console.log('[signal]skip self');
 		}
 		else {
-			console.log('notify offer');
+			console.log('[signal]notify offer');
 			client.send(msg);
 		}
 	});
@@ -57,10 +48,10 @@ var mapOffers = {};
 var mapAnswers = {};
 
 wss.on('connection', function(ws) {
-    console.log('connected ' + ws._socket.remoteAddress);
+    console.log('[signal]connected ' + ws._socket.remoteAddress);
     ws.on('message', function(message) {
     	var msg = JSON.parse(message);
-        console.log('received: %s', message);
+        console.log('[signal]received: %s', message);
 	if (msg.type === "hello")
 	{
 		ws.send(JSON.stringify(msg));

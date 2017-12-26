@@ -2,8 +2,8 @@
 var libqqwry = require('lib-qqwry');
 var qqwry = libqqwry.init();
 var http = require('http');
-var url=require('url');
-var mime=require('./mime.js').types;
+var url = require('url');
+var mime = require('./mime.js').types;
 
 qqwry.speed();
 
