@@ -1,0 +1,9 @@
+curl -o - https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+sudo apt install npm
+sudo ln -s /usr/bin/nodejs /usr/bin/node
+npm install -g pm2
+npm install ws
+npm search lib-qqwry
+npm search lock
+npm install async-lock
+
