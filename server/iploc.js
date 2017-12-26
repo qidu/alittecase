@@ -36,9 +36,3 @@ function getClientIP(req)
 		req.socket.remoteAddress ||
 		req.connection.socket.remoteAddress;
 }
-
-//var ip1 = qqwry.searchIP("123.125.1.1");
-//for(var i=0; i<200000; i++) {
-//	ip1 = qqwry.searchIP("111.206.71.1");
-//}
-//console.log(ip1);
