@@ -34,17 +34,17 @@ wss.on('connection', function(ws) {
 	}
 	else if(msg.type === "candidate")
 	{
-        	wss.notifyCandidate(ws, message); // from one to others
+        	wss.notifyOther(ws, msg); // from one to others
 	}
 	else if(msg.type === "offer")
 	{
 		mapOffers[ws] = message;
-		wss.notifyOffer(ws, message);
+		wss.notifyOther(ws, msg);
 	}
 	else if(msg.type === "answer")
 	{
 		mapAnswers[ws] = message;
-		wss.notifyOffer(ws, message);
+		wss.notifyOther(ws, msg);
 	}
 	else if(msg.type === "add")
 	{
@@ -71,28 +71,29 @@ function isNull(data) {
 	return (data == undefined || data == null);
 }
 
-wss.notifyCandidate = function notifyCandidate(ws, msg) {
-	wss.clients.forEach(function each(client) {
-		if(client == ws) {
-			console.log('[signal] skip self');
+wss.notifyOther = function notifyOther(ws, msg) {
+    	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+	msg.from = pid;
+	if (!isNull(msg.to))
+	{
+		if(msg.to in mapSockets)
+		{
+			var dst = mapSockets[msg.to];
+			dst.send(JSON.stringify(msg));
 		}
 		else {
-			console.log('[signal] notify candidate');
-			client.send(msg);
+			console.log('[signal] can not find ' + msg.to);
 		}
-	});
-}
-
-wss.notifyOffer = function notifyOffer(ws, msg) {
-	wss.clients.forEach(function each(client) {
-		if(client == ws) {
-			console.log('[signal] skip self');
-		}
-		else {
-			console.log('[signal] notify offer');
-			client.send(msg);
-		}
-	});
+	}
+	else {
+		var message = JSON.stringify(msg);
+		wss.clients.forEach(function each(client) {
+			if(client != ws) {
+				console.log('[signal] notify candidate');
+				client.send(message);
+			}
+		});
+	}
 }
 
 wss.updateSocket = function updateSocket(ws, rid) {
