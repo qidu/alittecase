@@ -135,7 +135,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		res = {};
 		res.rid = msg.rid;
 		res.seedslist = new Array();
-		res.ispcnt = new Array();
+		res.mapispcount = new Array();
 		//res.areacnt = new Array();
 		var seed = {};
 		seed.isp = msg.isp;
@@ -157,15 +157,15 @@ wss.addResouce = function addResouce(ws, msg) {
 		
 		wss.updateSocket(pid, msg.rid);
 		
-		if (isNull(res.ispcnt)) {
-			res.ispcnt = new Array();
+		if (isNull(res.mapispcount)) {
+			res.mapispcount = new Array();
 		}
-		if(!(msg.isp in res.ispcnt)) {
-			res.ispcnt[ispcnt] = 1;
+		if(!(msg.isp in res.mapispcount)) {
+			res.mapispcount[msg.isp] = 1;
 		}
 		else {
-			var cnt = res.ispcnt[ispcnt];
-			res.ispcnt[ispcnt] = 1 + cnt;
+			var cnt = res.mapispcount[msg.isp];
+			res.mapispcount[msg.isp] = 1 + cnt;
 		}
 	}
 }
@@ -174,12 +174,43 @@ wss.queryNodes = function queryNodes(ws, msg) {
     	var pid = wss.getPid(ws);
 	var resp = {};
 	if (msg.rid in mapResouces) {
+		var seeds = null;
 		var res = mapResouces[msg.rid];
 		var start = res.seedslist.indexOf(pid);
 		if (start == -1) {
 			start = Math.floor(res.seedslist.length * Math.random());
+			seeds = res.seedslist.slice(start, start+SeedNum);
 		}
-		var seeds = res.seedslist.slice(start, start+SeedNum);
+		else {
+			var rand = Math.floor(res.seedslist.length*Math.random());
+			start = rand > start ? (rand - start) : (start - rand);
+			if(!isNull(msg.isp) && (msg.isp in res.mapispcount))
+			{
+				var cnt = res.mapispcount[msg.isp];
+				if (cnt > 1000)
+				{
+					var candidates = res.seedslist.slice(start, start+10*SeedNum);
+					for(var s in candidates)
+					{
+						if(candidate[s].isp == msg.isp)
+						{
+							seeds[s] = candidates[s];
+						}
+					}
+					if (seeds.length < SeedNum/2) {
+						seeds.concat(res.seedslist.slice(start,start+SeedNum));
+						seeds = seeds.slice(0,SeedNum);
+					}
+				}
+				else {
+					seeds = res.seedslist.slice(start, start+SeedNum);
+				}
+			}
+			else
+			{
+				seeds = res.seedslist.slice(start, start+SeedNum);
+			}
+		}
 		if (isNull(seeds))
 		{
 			resp.seeds= seeds;
@@ -206,8 +237,13 @@ wss.closeSocket = function closeSocket(ws) {
 
 wss.removeResource = function removeResouceById(pid, rid) {
 	var res = mapResouces[rid];
-	if (isNull(res) && (rid in res.seedslist)) {
-		delete res.seedslist[rid];
+	if (isNull(res) && (pid in res.seedslist)) {
+		var seed = res.seedslist[pid];
+		if (seed.isp in res.mapispcount) {
+			var cnt = res.mapispcount[seed.isp];
+			res.mapispcount[seed.isp] = cnt - 1;
+		}
+		delete res.seedslist[pid];
 	}
 }
 
