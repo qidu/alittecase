@@ -30,6 +30,9 @@ wss.on('connection', function(ws) {
         console.log('[signal] received: %s', message);
 	if (msg.type === "hello")
 	{
+    		var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+		msg.pid = pid;
+		ws.pid = pid;
 		ws.send(JSON.stringify(msg)); // echo
 	}
 	else if(msg.type === "candidate")
@@ -183,12 +186,13 @@ wss.queryNodes = function queryNodes(ws, msg) {
 }
 
 wss.closeSocket = function closeSocket(ws) {
-	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+	var pid = ws.pid;
+	console.log('[signal] closed ' + pid);
 	if (pid in mapSockets) {
 		var rids = mapSockets[pid].rids;
 		delete mapSockets[pid];
-		for(id in Object.keys(rids)) {
-			wss.removeResoucesById(pid, id);
+		for(rid in Object.keys(rids)) {
+			wss.removeResoucesById(pid, rid);
 		}
 	}
 }
