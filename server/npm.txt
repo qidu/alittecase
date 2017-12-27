@@ -6,4 +6,4 @@ npm install ws
 npm search lib-qqwry
 npm search lock
 npm install async-lock
-
+npm install uglify-js

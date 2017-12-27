@@ -30,9 +30,8 @@ wss.on('connection', function(ws) {
         console.log('[signal] received: %s', message);
 	if (msg.type === "hello")
 	{
-    		var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+    		var pid = wss.getPid(ws);
 		msg.pid = pid;
-		ws.pid = pid;
 		ws.send(JSON.stringify(msg)); // echo
 	}
 	else if(msg.type === "candidate")
@@ -74,8 +73,16 @@ function isNull(data) {
 	return (data == undefined || data == null);
 }
 
+wss.getPid = function getPid(ws) {
+	if (isNull(ws.pid)) {
+		var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+		ws.pid = pid.replace(/:/,'_').replace(/./,'_');
+	}
+	return ws.pid;
+}
+
 wss.notifyOther = function notifyOther(ws, msg) {
-    	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+    	var pid = wss.getPid(ws);
 	msg.from = pid;
 	if (!isNull(msg.to))
 	{
@@ -100,7 +107,7 @@ wss.notifyOther = function notifyOther(ws, msg) {
 }
 
 wss.updateSocket = function updateSocket(ws, rid) {
-    	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+    	var pid = wss.getPid(ws);
 	var peer = {};
 	if (!(pid in mapSockets)) {
 		peer.socket = ws;
@@ -122,7 +129,7 @@ wss.updateSocket = function updateSocket(ws, rid) {
 // rid => obj{rid,seedslist[pid=>seed],ispcounter,areacounter}
 //
 wss.addResouce = function addResouce(ws, msg) {
-    	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+    	var pid = wss.getPid(ws);
 	var res = null;
 	if(!mapResouces.hasOwnProperty(msg.rid)) {
 		res = {};
@@ -164,7 +171,7 @@ wss.addResouce = function addResouce(ws, msg) {
 }
 
 wss.queryNodes = function queryNodes(ws, msg) {
-    	var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+    	var pid = wss.getPid(ws);
 	var resp = {};
 	if (msg.rid in mapResouces) {
 		var res = mapResouces[msg.rid];
