@@ -1,6 +1,5 @@
-var Port = 8000;
-
-var http = require('http');
+//var Port = 8000;
+//var http = require('http');
 var cluster = require('cluster');
 var numCPUs = require('os').cpus().length;
 
@@ -23,15 +22,15 @@ if (cluster.isMaster) {
     		console.log('[master] ' + 'listening: worker' + worker.id + ',pid:' + worker.process.pid + ', Address' + ": " + address.port);
     		worker_ports.push(address.port);
   	});
-	http.createServer(function(req,resp) {
-		resp.writeHead(200, {'Content-Type':'text/plain'});
-		var info = {};
-		info.ports = worker_ports;
-		resp.end(JSON.stringify(info));
-	}).listen(Port);
- 
+	
+	//http.createServer(function(req,resp) {
+	//	resp.writeHead(200, {'Content-Type':'text/plain'});
+	//	var info = {};
+	//	info.ports = worker_ports;
+	//	resp.end(JSON.stringify(info));
+	//}).listen(Port);
+
+  	require('./iploc.js');
 } else if (cluster.isWorker) {
   require('./signal.js');
-  //require('./iploc.js');
-  //require('./app.js');
 }

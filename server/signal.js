@@ -70,7 +70,7 @@ wss.on('connection', function(ws) {
 });
 
 function isNull(data) {
-	return (data == undefined || data == null);
+	return (typeof(data) == "undefined" || data == null);
 }
 
 wss.getPid = function getPid(ws) {
