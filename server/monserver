@@ -1,2 +1,2 @@
-*/ * * * * root /bin/sh monstun.sh
-*/ * * * * root /bin/sh moncluster.sh
+*/1 * * * * root /bin/sh monstun.sh
+*/1 * * * * root /bin/sh moncluster.sh

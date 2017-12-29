@@ -7,7 +7,6 @@ var dc = null;
 var ice = {"iceServers": [
 //	{"url": "stun:stun.l.google.com:19302"},
 //	{"url": "stun:stunserver.org"},
-//	{"url": "stun:180.76.111.247"}
 	{"url": "stun:10.3.15.30"}
 ]};
 
