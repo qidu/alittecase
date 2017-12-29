@@ -22,6 +22,8 @@ var mapOffers = {};
 var mapAnswers = {};
 var mapResouces = new Array();
 var mapSockets = new Array();
+var mapFlux = new Array();
+var tstagFlux = 0;
 
 wss.on('connection', function(ws) {
     console.log('[signal] connected ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
@@ -58,6 +60,7 @@ wss.on('connection', function(ws) {
 	}
 	else if(msg.type === "report")
 	{
+		wss.reportStatus(ws, msg);
 	}
 	else
 	{
@@ -142,6 +145,7 @@ wss.addResouce = function addResouce(ws, msg) {
 
 		seed.isp = msg.isp;
 		seed.area = msg.area;
+		ws.seed = seed;
 		res.seedslist[pid] = seed;
 		mapResouces[msg.rid] = res;
 		wss.updateSocket(pid, msg.rid);
@@ -155,6 +159,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		var seed = {};
 		seed.isp = msg.isp;
 		seed.area = msg.area;
+		ws.seed = seed;
 		res.seedslist[pid] = seed;
 		console.log('[signal] create another ' + pid +' ' + (pid in res.seedslist));
 		
@@ -264,4 +269,51 @@ wss.removeResource = function removeResouceById(pid, rid) {
 	}
 }
 
+wss.reportStatus = function reportStatus(ws, msg) {
+    	var pid = wss.getPid(ws);
+	if (isNull(msg) || isNull(msg.p2p) || isNull(msg.cdn) || isNull(msg.customer)) {
+		return;
+	}
+	if (!(msg.customer in mapFlux))
+	{
+		mapFlux[msg.customer] = new Array();
+	}
+	var date = new Date();
+	var tstag = Math.floor(date.getTime()/1000/300);
+	var flux = {};
 
+	if (tstag != tstagFlux) {
+		// dump data; 
+		for (var cus in mapFlux)
+		{
+			var fluxlist = mapFlux[cus];
+			var p2psum = 0, cdnsum = 0;
+			for (var flx in fluxlist)
+			{
+				//flx.date + ',' + flx.customer + ',' + flx.pid + ',' + flx.cdn + ',' + flx.p2p
+				if (!isNull(flx.isp)) {
+					//flx.isp + ',' + flx.area;
+				}
+				p2psum += flx.p2p;
+				cdnsum += flx.cdn;
+			}
+			// tstagFlux + ',' + cus + ',' + cdnsum + ',' + p2psum
+			delete fluxlist;
+			delete mapFlux[cus];
+		}
+		// then
+		tstagFlux = tstag;
+	}
+
+	flux.pid = pid;
+	flux.tstag = tstag;
+	flux.date = date;
+	flux.cdn = msg.cdn;
+	flux.p2p = msg.p2p;
+	flux.customer = msg.customer;
+	if (!isNull(ws.seed)) {
+		flux.isp = ws.seed.isp;
+		flux.area = ws.seed.area;
+	}
+	mapFlux[msg.customer].push(flux);
+}
