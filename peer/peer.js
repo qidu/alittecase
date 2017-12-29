@@ -7,7 +7,8 @@ var dc = null;
 var ice = {"iceServers": [
 //	{"url": "stun:stun.l.google.com:19302"},
 //	{"url": "stun:stunserver.org"},
-	{"url": "stun:180.76.111.247"}
+//	{"url": "stun:180.76.111.247"}
+	{"url": "stun:10.3.15.30"}
 ]};
 
 var mediaConstraints = {
@@ -20,7 +21,7 @@ var mediaConstraints = {
 var mapCandidates = {};
 var mapOffers = {};
 
-var signalWs = new WebSocket("ws://180.76.111.247:8080"); 
+var signalWs = new WebSocket("ws://10.3.15.30:8080"); 
 
 
 signalWs.onclose = function (evt) { console.log("ws close") }; 
@@ -172,8 +173,9 @@ function query()
     msg.ver = "1";
     msg.isp = "1";
     msg.area = "1";
-    msg.pid = "xyz";
-    msg.rid = "abc";
+    msg.tag = "xyz" + Math.floor(100*Math.random());
+    msg.rid = "aaa";
+    //msg.rid = "aaa" + Math.floor(100*Math.random());
 	signalWs.send(JSON.stringify(msg)); 
 }
 

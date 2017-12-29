@@ -136,17 +136,16 @@ wss.addResouce = function addResouce(ws, msg) {
 	if(!mapResouces.hasOwnProperty(msg.rid)) {
 		res = {};
 		res.rid = msg.rid;
-		list = new Array();
+		res.seedslist = new Array();
 		res.mapispcount = new Array();
 		//res.areacnt = new Array();
 
 		seed.isp = msg.isp;
 		seed.area = msg.area;
-		list[pid] = seed;
-		res.seedslist = list;
+		res.seedslist[pid] = seed;
 		mapResouces[msg.rid] = res;
 		wss.updateSocket(pid, msg.rid);
-		console.log('[signal] create new ' + pid +' ' + list + ' ' + res);
+		console.log('[signal] create new ' + pid +' ' + (pid in res.seedslist));
 	}
 	else {
 		res = mapResouces[msg.rid];
@@ -157,6 +156,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		seed.isp = msg.isp;
 		seed.area = msg.area;
 		res.seedslist[pid] = seed;
+		console.log('[signal] create another ' + pid +' ' + (pid in res.seedslist));
 		
 		wss.updateSocket(pid, msg.rid);
 		
@@ -186,22 +186,23 @@ wss.queryNodes = function queryNodes(ws, msg) {
 	if (msg.rid in mapResouces) {
 		var seeds = null;
 		var res = mapResouces[msg.rid];
-		console.log('find res: ' + JSON.stringify(res));
-		var start = res.seedslist.indexOf(pid);
+		console.log('find res: ' + JSON.stringify(pid in res.seedslist));
+		var klist =Object.keys(res.seedslist);
+		var start = klist.indexOf(pid);
 		console.log('find pid at: ' + JSON.stringify(start));
 		if (start == -1) {
-			start = Math.floor(res.seedslist.length * Math.random());
-			seeds = res.seedslist.slice(start, start+SeedNum);
+			start = Math.floor(klist.length * Math.random());
+			seeds = klist.slice(start, start+SeedNum);
 		}
 		else {
-			var rand = Math.floor(res.seedslist.length*Math.random());
+			var rand = Math.floor(klist.length*Math.random());
 			start = rand > start ? (rand - start) : (start - rand);
 			if(!isNull(msg.isp) && (msg.isp in res.mapispcount))
 			{
 				var cnt = res.mapispcount[msg.isp];
 				if (cnt > 1000)
 				{
-					var candidates = res.seedslist.slice(start, start+10*SeedNum);
+					var candidates = klist.slice(start, start+10*SeedNum);
 					for(var s in candidates)
 					{
 						if(candidate[s].isp == msg.isp)
@@ -210,12 +211,12 @@ wss.queryNodes = function queryNodes(ws, msg) {
 						}
 					}
 					if (seeds.length < SeedNum/2) {
-						seeds.concat(res.seedslist.slice(start,start+SeedNum));
+						seeds.concat(klist.slice(start,start+SeedNum));
 						seeds = seeds.slice(0,SeedNum);
 					}
 				}
 				else {
-					seeds = res.seedslist.slice(start, start+SeedNum);
+					seeds = klist.slice(start, start+SeedNum);
 				}
 			}
 			else
@@ -232,11 +233,11 @@ wss.queryNodes = function queryNodes(ws, msg) {
 		}
 	}
 	else {
-		wss.addResouce(ws, msg);
 		resp.error = 'only you';
 	}
 	resp.type = 'query';
 	ws.send(JSON.stringify(resp));
+	wss.addResouce(ws, msg);
 }
 
 wss.closeSocket = function closeSocket(ws) {
