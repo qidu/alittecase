@@ -17,7 +17,10 @@ http.createServer(function(request,response) {
 	info.ts = ts;
 	info.ip = ip;
 
-	response.writeHead(200, {'Content-Type': mime['json']});
+	response.writeHead(200, {
+		'Content-Type': mime['json'],
+		'Access-Control-Allow-Origin':'*'
+	});
 	//response.write('');
 	if (uri === '/loc') {
 		var wry = qqwry.searchIP(ip);
