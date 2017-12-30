@@ -35,10 +35,9 @@ wss.on('connection', function(ws) {
         console.log('[signal] received: %s', message);
 	if (msg.type === "hello")
 	{
-		wss.checkCus(ws,msg);
-    		var pid = wss.getPid(ws);
-		msg.pid = pid;
+		msg.pid = wss.getPid(ws);
 		ws.send(JSON.stringify(msg)); // echo
+		wss.checkCus(ws,msg);
 	}
 	else if(msg.type === "candidate")
 	{
@@ -104,6 +103,7 @@ wss.getPid = function getPid(ws) {
 		else if (!isNull(ws._socket)) {
 			var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
 			ws.pid = pid.replace(/:/g,'_').replace(/\./g,'_');
+			return ws.pid;
 		}
 		else {
 			return '_none1_';
