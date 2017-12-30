@@ -78,10 +78,13 @@ function isNull(data) {
 
 wss.getPid = function getPid(ws) {
 	if (!isNull(ws) && !isNull(ws._socket)) {
-		var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
-		ws.pid = pid.replace(/:/g,'_').replace(/\./g,'_');
+		if (isNull(ws.pid)) {
+			var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
+			ws.pid = pid.replace(/:/g,'_').replace(/\./g,'_');
+		}
+		return ws.pid;
 	}
-	return ws.pid;
+	return '_none_';
 }
 
 wss.notifyOther = function notifyOther(ws, msg) {
@@ -250,16 +253,16 @@ wss.closeSocket = function closeSocket(ws) {
 	console.log('[signal] closed ' + pid);
 	if (pid in mapSockets) {
 		var rids = mapSockets[pid].rids;
-		delete mapSockets[pid];
-		for(rid in Object.keys(rids)) {
+		for(var rid in Object.keys(rids)) {
 			wss.removeResoucesById(pid, rid);
 		}
+		delete mapSockets[pid];
 	}
 }
 
 wss.removeResource = function removeResouceById(pid, rid) {
 	var res = mapResouces[rid];
-	if (isNull(res) && (pid in res.seedslist)) {
+	if (!isNull(res) && !isNull(res.seedslist) && (pid in res.seedslist)) {
 		var seed = res.seedslist[pid];
 		if (seed.isp in res.mapispcount) {
 			var cnt = res.mapispcount[seed.isp];
