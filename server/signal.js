@@ -74,6 +74,9 @@ wss.on('connection', function(ws) {
     ws.on('close', function(err) {
 	wss.closeSocket(ws);
     });
+    ws.on('error', function(err) {
+	wss.closeSocket(ws);
+    });
 });
 
 function isNull(data) {
@@ -234,10 +237,10 @@ wss.queryNodes = function queryNodes(ws, msg) {
 							seeds[s] = candidates[s];
 						}
 					}
-					if (seeds.length < SeedNum/2) {
-						seeds.concat(klist.slice(start,start+SeedNum));
-						seeds = seeds.slice(0,SeedNum);
-					}
+					//if (seeds.length < SeedNum/2) {
+					//	seeds.concat(klist.slice(start,start+SeedNum));
+					//	seeds = seeds.slice(0,SeedNum);
+					//}
 				}
 				else {
 					seeds = klist.slice(start, start+SeedNum);
@@ -293,10 +296,7 @@ wss.reportStatus = function reportStatus(ws, msg) {
 	if (isNull(msg) || isNull(msg.p2p) || isNull(msg.cdn) || isNull(msg.customer)) {
 		return;
 	}
-	if (!(msg.customer in mapFlux))
-	{
-		mapFlux[msg.customer] = new Array();
-	}
+
 	var date = new Date();
 	var tstag = Math.floor(date.getTime()/1000/300);
 	var flux = {};
@@ -316,8 +316,7 @@ wss.reportStatus = function reportStatus(ws, msg) {
 				p2psum += flx.p2p;
 				cdnsum += flx.cdn;
 			}
-			// tstagFlux + ',' + cus + ',' + cdnsum + ',' + p2psum
-			delete fluxlist;
+			console.log('[signal] flux ' + tstagFlux + ',' + cus + ',' + JSON.stringify(cdnsum) + ',' + JSON.stringify(p2psum));
 			delete mapFlux[cus];
 		}
 		// then
@@ -333,6 +332,10 @@ wss.reportStatus = function reportStatus(ws, msg) {
 	if (!isNull(ws.seed)) {
 		flux.isp = ws.seed.isp;
 		flux.area = ws.seed.area;
+	}
+	if (!(msg.customer in mapFlux))
+	{
+		mapFlux[msg.customer] = new Array();
 	}
 	mapFlux[msg.customer].push(flux);
 }
