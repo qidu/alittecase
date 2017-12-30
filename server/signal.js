@@ -97,14 +97,21 @@ wss.checkCus = function checkCus(ws,msg) {
 }
 
 wss.getPid = function getPid(ws) {
-	if (!isNull(ws) && !isNull(ws._socket)) {
-		if (isNull(ws.pid)) {
+	if (!isNull(ws)) {
+		if (!isNull(ws.pid)) {
+			return ws.pid;
+		}
+		else if (!isNull(ws._socket)) {
 			var pid = ws._socket.remoteAddress + ':' + ws._socket.remotePort;
 			ws.pid = pid.replace(/:/g,'_').replace(/\./g,'_');
 		}
-		return ws.pid;
+		else {
+			return '_none1_';
+		}
 	}
-	return '_none_';
+	else {
+		return '_none0_';
+	}
 }
 
 wss.notifyOther = function notifyOther(ws, msg) {
@@ -139,6 +146,7 @@ wss.updateSocket = function updateSocket(ws, rid) {
 		peer.rids = new Array();
 		peer.rids[rid] = 1;
 		mapSockets[pid] = peer;
+		console.log('[signal] map ' + pid + ' ' + rid);
 	}
 	else {
 		peer = mapSockets[pid];
@@ -159,7 +167,7 @@ wss.addResouce = function addResouce(ws, msg) {
 	var res = null;
 	var seed = {};
 
-	if(!mapResouces.hasOwnProperty(msg.rid)) {
+	if(!(msg.rid in mapResouces)) {
 		res = {};
 		res.rid = msg.rid;
 		res.seedslist = new Array();
@@ -171,7 +179,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		ws.seed = seed; //
 		res.seedslist[pid] = seed;
 		mapResouces[msg.rid] = res;
-		wss.updateSocket(pid, msg.rid);
+		wss.updateSocket(ws, msg.rid);
 		console.log('[signal] create new ' + pid +' ' + (pid in res.seedslist));
 	}
 	else {
@@ -186,7 +194,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		res.seedslist[pid] = seed;
 		console.log('[signal] create another ' + pid +' ' + (pid in res.seedslist));
 		
-		wss.updateSocket(pid, msg.rid);
+		wss.updateSocket(ws, msg.rid);
 		
 		if (isNull(res.mapispcount)) {
 			res.mapispcount = new Array();
@@ -214,7 +222,7 @@ wss.queryNodes = function queryNodes(ws, msg) {
 	if (msg.rid in mapResouces) {
 		var seeds = null;
 		var res = mapResouces[msg.rid];
-		var klist =Object.keys(res.seedslist);
+		var klist = Object.keys(res.seedslist);
 		var start = 0; //klist.indexOf(pid);
 		console.log('[signal] find res: ' + JSON.stringify(pid in res.seedslist) + ' ' + start);
 		if (start == -1) {
@@ -248,12 +256,12 @@ wss.queryNodes = function queryNodes(ws, msg) {
 			}
 			else
 			{
-				seeds = res.seedslist.slice(start, start+SeedNum);
+				seeds = klist.slice(start, start+SeedNum);
 			}
 		}
 		if (!isNull(seeds))
 		{
-			resp.seeds= seeds;
+			resp.seeds = seeds;
 		}
 		else {
 			resp.error = 'find nothing';
@@ -268,18 +276,22 @@ wss.queryNodes = function queryNodes(ws, msg) {
 }
 
 wss.closeSocket = function closeSocket(ws) {
-	var pid = ws.pid;
-	console.log('[signal] closed ' + pid);
+	var pid = wss.getPid(ws);
+	console.log('[signal] closing ' + pid);
 	if (pid in mapSockets) {
 		var rids = mapSockets[pid].rids;
-		for(var rid in Object.keys(rids)) {
-			wss.removeResoucesById(pid, rid);
+		for(var rid in rids) {
+			console.log('[signal] rids rm ' + JSON.stringify(rid));
+			wss.removeResourcesById(pid, rid);
 		}
 		delete mapSockets[pid];
 	}
+	else {
+		console.log('[signal] can not find ' + pid);
+	}
 }
 
-wss.removeResource = function removeResouceById(pid, rid) {
+wss.removeResourcesById = function removeResourcesById(pid, rid) {
 	var res = mapResouces[rid];
 	if (!isNull(res) && !isNull(res.seedslist) && (pid in res.seedslist)) {
 		var seed = res.seedslist[pid];
@@ -287,6 +299,7 @@ wss.removeResource = function removeResouceById(pid, rid) {
 			var cnt = res.mapispcount[seed.isp];
 			res.mapispcount[seed.isp] = cnt - 1;
 		}
+		console.log('[signal] remove ' + pid + ' in ' + rid);
 		delete res.seedslist[pid];
 	}
 }
