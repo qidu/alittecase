@@ -121,10 +121,23 @@ wss.notifyOther = function notifyOther(ws, msg) {
 	{
 		if(msg.to in mapSockets)
 		{
-			var dst = mapSockets[msg.to];
-			dst.send(JSON.stringify(msg));
+			var peer = mapSockets[msg.to];
+			if (!isNull(peer) && !isNull(peer.socket)) {
+				peer.socket.send(JSON.stringify(msg));
+			}
+			else {
+				var resp = {};
+				resp.type = 'info';
+				resp.error = 'invalid ' + msg.to;
+				ws.send(JSON.stringify(resp));
+				console.log('[signal] invalid ' + msg.to);
+			}
 		}
 		else {
+			var resp = {};
+			resp.type = 'info';
+			resp.error = 'can not find ' + msg.to;
+			ws.send(JSON.stringify(resp));
 			console.log('[signal] can not find ' + msg.to);
 		}
 	}
