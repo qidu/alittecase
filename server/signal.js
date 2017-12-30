@@ -319,17 +319,16 @@ wss.reportStatus = function reportStatus(ws, msg) {
 		for (var cus in mapFlux)
 		{
 			var fluxlist = mapFlux[cus];
-			var p2psum = 0, cdnsum = 0;
-			for (var flx in fluxlist)
-			{
+			var p2psum = 0, cdnsum = 1;
+			fluxlist.forEach(function(flx) {
 				//flx.date + ',' + flx.customer + ',' + flx.pid + ',' + flx.cdn + ',' + flx.p2p
 				if (!isNull(flx.isp)) {
 					//flx.isp + ',' + flx.area;
 				}
-				p2psum += flx.p2p;
 				cdnsum += flx.cdn;
-			}
-			console.log('[signal] flux ' + tstagFlux + ',' + cus + ',' + JSON.stringify(cdnsum) + ',' + JSON.stringify(p2psum));
+				p2psum += flx.p2p;
+			});
+			console.log('[signal] flux total ' + tstagFlux + ',' + cus + ',' + JSON.stringify(cdnsum) + ',' + JSON.stringify(p2psum));
 			delete mapFlux[cus];
 		}
 		// then
@@ -351,4 +350,5 @@ wss.reportStatus = function reportStatus(ws, msg) {
 		mapFlux[msg.customer] = new Array();
 	}
 	mapFlux[msg.customer].push(flux);
+	console.log('[signal] flux ' + date + ',' + msg.customer + ',' + flux.cdn + ',' + flux.p2p + ',' + pid);
 }
