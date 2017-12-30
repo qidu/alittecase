@@ -20,10 +20,13 @@ for(var i=0; i < N; i++) {
 
 var mapOffers = {};
 var mapAnswers = {};
+var mapCustomers = new Array();
 var mapResouces = new Array();
 var mapSockets = new Array();
 var mapFlux = new Array();
 var tstagFlux = 0;
+
+mapCustomers['testabc'] = 1;
 
 wss.on('connection', function(ws) {
     console.log('[signal] connected ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
@@ -32,6 +35,7 @@ wss.on('connection', function(ws) {
         console.log('[signal] received: %s', message);
 	if (msg.type === "hello")
 	{
+		wss.checkCus(ws,msg);
     		var pid = wss.getPid(ws);
 		msg.pid = pid;
 		ws.send(JSON.stringify(msg)); // echo
@@ -74,6 +78,19 @@ wss.on('connection', function(ws) {
 
 function isNull(data) {
 	return (typeof(data) == "undefined" || data == null);
+}
+
+wss.checkCus = function checkCus(ws,msg) {
+	if (!isNull(ws) && !isNull(msg.customer))
+	{
+		ws.customer = msg.customer;
+		if (ws.customer in mapCustomers) {
+			return;
+		}
+	}
+	else {
+		// close socket
+	}
 }
 
 wss.getPid = function getPid(ws) {
@@ -148,7 +165,7 @@ wss.addResouce = function addResouce(ws, msg) {
 
 		seed.isp = msg.isp;
 		seed.area = msg.area;
-		ws.seed = seed;
+		ws.seed = seed; //
 		res.seedslist[pid] = seed;
 		mapResouces[msg.rid] = res;
 		wss.updateSocket(pid, msg.rid);
@@ -162,7 +179,7 @@ wss.addResouce = function addResouce(ws, msg) {
 		var seed = {};
 		seed.isp = msg.isp;
 		seed.area = msg.area;
-		ws.seed = seed;
+		ws.seed = seed; //
 		res.seedslist[pid] = seed;
 		console.log('[signal] create another ' + pid +' ' + (pid in res.seedslist));
 		
@@ -194,17 +211,16 @@ wss.queryNodes = function queryNodes(ws, msg) {
 	if (msg.rid in mapResouces) {
 		var seeds = null;
 		var res = mapResouces[msg.rid];
-		console.log('find res: ' + JSON.stringify(pid in res.seedslist));
 		var klist =Object.keys(res.seedslist);
-		var start = klist.indexOf(pid);
-		console.log('find pid at: ' + JSON.stringify(start));
+		var start = 0; //klist.indexOf(pid);
+		console.log('[signal] find res: ' + JSON.stringify(pid in res.seedslist) + ' ' + start);
 		if (start == -1) {
 			start = Math.floor(klist.length * Math.random());
 			seeds = klist.slice(start, start+SeedNum);
 		}
 		else {
 			var rand = Math.floor(klist.length*Math.random());
-			start = rand > start ? (rand - start) : (start - rand);
+			start = 0; //rand > start ? (rand - start) : (start - rand);
 			if(!isNull(msg.isp) && (msg.isp in res.mapispcount))
 			{
 				var cnt = res.mapispcount[msg.isp];
@@ -213,7 +229,7 @@ wss.queryNodes = function queryNodes(ws, msg) {
 					var candidates = klist.slice(start, start+10*SeedNum);
 					for(var s in candidates)
 					{
-						if(candidate[s].isp == msg.isp)
+						if(candidates[s].isp == msg.isp)
 						{
 							seeds[s] = candidates[s];
 						}
