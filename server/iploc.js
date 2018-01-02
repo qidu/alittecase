@@ -42,7 +42,7 @@ http.createServer(function(request,response) {
 	else {
 		response.end('hello world!');
 	}
-}).listen(Port);
+}).listen(Port,'0.0.0.0');
 
 function getClientIP(req)
 {

@@ -8,7 +8,11 @@ var wss = null;
 var port = Port + (process.pid % N); //Math.floor(Port + N * Math.random());
 for(var i=0; i < N; i++) {
     try {
-	wss = new WebSocketServer({'port': port});
+	wss = new WebSocketServer({
+		'port': port,
+		'host': '0.0.0.0',
+		verifyClient: sockVerify
+	});
 	break;
     }
     catch(e)
@@ -16,6 +20,12 @@ for(var i=0; i < N; i++) {
 	port = Port + ((port+1) % N);
 	console.log('[signal] listen retry +1')
     }
+}
+
+function sockVerify(info)
+{
+	console.log('[signal] ' + info.origin + ' ' + info.req.t + ' ' + info.secure);
+	return true;
 }
 
 var mapOffers = {};
