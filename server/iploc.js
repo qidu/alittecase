@@ -51,6 +51,6 @@ function getClientIP(req)
 		req.connection.remoteAddress ||
 		req.socket.remoteAddress ||
 		req.connection.socket.remoteAddress;
-	return ip.replace(/::ffff:/,'');
+	return ip; //.replace(/::ffff:/,'');
 }
 
