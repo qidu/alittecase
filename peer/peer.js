@@ -4,6 +4,36 @@ var pc = null;
 var pc0 = null;
 var dc = null;
 
+function encodeMsg($str)
+{
+    var str = encodeURI($str);
+    var data = new Uint8Array(str.length);
+    for(var i = 0; i < str.length; i++)
+    {
+        data[i] = str[i].charCodeAt() + str.length + i;
+    }
+    return data;
+}
+
+function decodeMsg($d)
+{
+    if ($d instanceof ArrayBuffer) console.log('[a]');
+    else if($d instanceof Uint8Array) console.log('[u]');
+    else {
+        console.log('[n]');
+    }
+    var data = new Uint8Array($d);
+    var str = "";
+    for(var i = 0; i < data.byteLength; i++)
+    {
+        var num = data[i] - data.byteLength - i;
+        if (num < 0) { num += 256;}
+        str += String.fromCharCode(num);
+    }
+    console.log('decoding ' + decodeURI(str) + ' ');
+    return decodeURI(str);
+}
+
 var ice = {"iceServers": [
 //	{"url": "stun:stun.l.google.com:19302"},
 //	{"url": "stun:stunserver.org"},
@@ -20,20 +50,22 @@ var mediaConstraints = {
 var mapCandidates = {};
 var mapOffers = {};
 
-var signalWs = new WebSocket("ws://10.3.15.30:8080"); 
+var signalWs = new WebSocket("ws://10.3.15.30:8080", ['binary']); 
 
 
 signalWs.onclose = function (evt) { console.log("ws close") }; 
 signalWs.onerror = function (evt) { console.log("ws error") }; 
 
 signalWs.onopen = function (evt) { 
-	console.log("ws open"); 
-	//evt.target.send(JSON.stringify("initfire")); 
+    console.log("ws open"); 
+    evt.target.binaryType = "arraybuffer";
+    //evt.target.send(JSON.stringify("initfire")); 
     sayHello();
 };
 
 signalWs.onmessage = function (evt) { 
-	var msg = JSON.parse(evt.data);
+	console.log('receive: ' + decodeMsg(evt.data));
+	var msg = JSON.parse(decodeMsg(evt.data));
 
 	if (msg.type === "candidate") {
 		if (!mapCandidates.hasOwnProperty(JSON.stringify(msg.data))) {
@@ -116,7 +148,7 @@ function initOffer()
 				var msg = {};
 				msg.type = "offer";
 				msg.data = pc.localDescription;
-				signalWs.send(JSON.stringify(msg));
+				sendMsg(signalWs, msg);
 			    console.log("offer created and sent local desc: " + JSON.stringify(pc.localDescription));
 			});
 		}, logError, mediaConstraints);
@@ -149,12 +181,19 @@ function setupPeerConnection()
 	return pc;
 }
 
+function sendMsg(ws, msg)
+{
+	var m = encodeMsg(JSON.stringify(msg));
+	console.log('send: ' + JSON.stringify(msg));
+	ws.send(m);
+}
+
 function updateCandidates(candidate)
 {
     var msg = {};
     msg.type = "candidate";
     msg.data = candidate;
-    signalWs.send(JSON.stringify(msg));
+    sendMsg(signalWs, msg);
 }
 
 function sayHello()
@@ -162,7 +201,7 @@ function sayHello()
     var msg = {};
     msg.type = "hello";
     msg.data = null;
-	signalWs.send(JSON.stringify(msg)); 
+    sendMsg(signalWs, msg); 
 }
 
 function query()
@@ -175,7 +214,7 @@ function query()
     msg.tag = "xyz" + Math.floor(100*Math.random());
     msg.rid = "aaa";
     //msg.rid = "aaa" + Math.floor(100*Math.random());
-	signalWs.send(JSON.stringify(msg)); 
+    sendMsg(signalWs, msg); 
 }
 
 

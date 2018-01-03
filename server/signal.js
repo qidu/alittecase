@@ -28,6 +28,37 @@ function sockVerify(info)
 	return true;
 }
 
+function encodeMsg(s)
+{
+    var str = encodeURI(s);
+    var data = new Uint8Array(str.length);
+    console.log('[signal] send ' + s.length + 'to' + str.length + ' ' + s);
+    for(var i = 0; i < str.length; i++)
+    {
+        data[i] = str[i].charCodeAt() + str.length + i;
+    }
+    return data;
+}
+
+function decodeMsg(data)
+{
+//  MAYBE: if(data instanceof ArrayBuffer) data = new Uint8Array(data);
+    var str = "";
+    for(var i = 0; i < data.byteLength; i++)
+    {
+        var num = data[i] - data.byteLength - i;
+        while(num < 0) { num += 256;}
+        str += String.fromCharCode(num);
+    }
+    return decodeURI(str);
+}
+
+function sendMsg(ws, msg)
+{
+	var m = encodeMsg(JSON.stringify(msg));
+	ws.send(m);
+}
+
 var mapOffers = {};
 var mapAnswers = {};
 var mapCustomers = new Array();
@@ -40,14 +71,15 @@ mapCustomers['testabc'] = 1;
 
 wss.on('connection', function(ws) {
     console.log('[signal] connected ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
+    //ws.binaryType = "arraybuffer";
     ws.on('message', function(message) {
-    	var msg = JSON.parse(message);
-        console.log('[signal] received: %s', message);
+    	var msg = JSON.parse(decodeMsg(message));
+        console.log('[signal] received: %s', decodeMsg(message));
 	if (msg.type === "hello")
 	{
 		msg.pid = wss.getPid(ws);
-		ws.send(JSON.stringify(msg)); // echo
-		wss.checkCus(ws,msg);
+		sendMsg(ws, msg); // echo
+		wss.checkCus(ws, msg);
 	}
 	else if(msg.type === "candidate")
 	{
@@ -85,6 +117,9 @@ wss.on('connection', function(ws) {
     });
     ws.on('error', function(err) {
 	wss.closeSocket(ws);
+    });
+    ws.on('open', function(err) {
+	console.log('[signal] opened');
     });
 });
 
@@ -133,13 +168,13 @@ wss.notifyOther = function notifyOther(ws, msg) {
 		{
 			var peer = mapSockets[msg.to];
 			if (!isNull(peer) && !isNull(peer.socket)) {
-				peer.socket.send(JSON.stringify(msg));
+				sendMsg(peer.socket, msg);
 			}
 			else {
 				var resp = {};
 				resp.type = 'info';
 				resp.error = 'invalid ' + msg.to;
-				ws.send(JSON.stringify(resp));
+				sendMsg(ws, resp);
 				console.log('[signal] invalid ' + msg.to);
 			}
 		}
@@ -147,15 +182,14 @@ wss.notifyOther = function notifyOther(ws, msg) {
 			var resp = {};
 			resp.type = 'info';
 			resp.error = 'can not find ' + msg.to;
-			ws.send(JSON.stringify(resp));
+			sendMsg(ws, resp);
 			console.log('[signal] can not find ' + msg.to);
 		}
 	}
 	else {
-		var message = JSON.stringify(msg);
 		wss.clients.forEach(function each(client) {
 			if(client != ws) {
-				client.send(message);
+				sendMsg(client, msg);
 			}
 		});
 	}
@@ -239,7 +273,7 @@ wss.queryNodes = function queryNodes(ws, msg) {
 	{
 		resp.type = 'query';
 		resp.error = 'no rid';
-		ws.send(JSON.stringify(resp));
+		sendMsg(ws, resp);
 		return;
 	}
 	if (msg.rid in mapResouces) {
@@ -294,7 +328,7 @@ wss.queryNodes = function queryNodes(ws, msg) {
 		resp.error = 'only you';
 	}
 	resp.type = 'query';
-	ws.send(JSON.stringify(resp));
+	sendMsg(ws, resp);
 	wss.addResouce(ws, msg);
 }
 
