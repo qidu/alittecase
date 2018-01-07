@@ -361,6 +361,8 @@ wss.removeResourcesById = function removeResourcesById(pid, rid) {
 	}
 }
 
+var fluxlog = require('./logger.js').logger('flux');
+
 wss.reportStatus = function reportStatus(ws, msg) {
     	var pid = wss.getPid(ws);
 	if (isNull(msg) || isNull(msg.p2p) || isNull(msg.cdn) || isNull(msg.customer)) {
@@ -386,6 +388,12 @@ wss.reportStatus = function reportStatus(ws, msg) {
 				p2psum += flx.p2p;
 			});
 			console.log('[signal] flux total ' + tstagFlux + ',' + cus + ',' + JSON.stringify(cdnsum) + ',' + JSON.stringify(p2psum));
+			var fluxsum = {};
+			fluxsum.ts = tstagFlux; 
+			fluxsum.p2p = p2psum;
+			fluxsum.cdn = cdnsum;
+			fluxsum.cus = cus;
+			fluxlog.info(JSON.stringify(fluxsum));
 			delete mapFlux[cus];
 		}
 		// then
