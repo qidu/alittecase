@@ -69,6 +69,8 @@ var tstagFlux = 0;
 
 mapCustomers['testabc'] = 1;
 
+var cusconf = require('./cusconfig.js').cusconfig;
+
 wss.on('connection', function(ws) {
     console.log('[signal] connected ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
     //ws.binaryType = "arraybuffer";
@@ -78,6 +80,8 @@ wss.on('connection', function(ws) {
 	if (msg.type === "hello")
 	{
 		msg.pid = wss.getPid(ws);
+		msg.customer = {};
+		msg.customer.config = cusconf;
 		sendMsg(ws, msg); // echo
 		wss.checkCus(ws, msg);
 	}

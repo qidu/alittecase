@@ -5,6 +5,7 @@ var qqwry = libqqwry.init();
 var http = require('http');
 var url = require('url');
 var mime = require('./mime.js').types;
+var cusconf = require('./cusconfig.js').cusconfig;
 
 qqwry.speed();
 
@@ -28,6 +29,8 @@ http.createServer(function(request,response) {
 		loc.isp = wry.Area;
 		loc.area = wry.Country;
 		info.loc = loc;
+		info.customer = {};
+		info.customer.config = cusconf;
 		response.end('' + JSON.stringify(info));
 	}
 	else if(uri === '/ip') {
